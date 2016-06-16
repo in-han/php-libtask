@@ -6,6 +6,8 @@ This project is based on https://github.com/liexusong/ptask.
 The origin project(liexusong/ptask) is amazing, but there is some bugs.
 
 Especially it doesn't deal with zend vm global variables, and this is a key problem. 
+
+This project does simple modifications to libtask with zend running environment contextswitch.
 ```
 
 
