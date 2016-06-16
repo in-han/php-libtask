@@ -1,11 +1,13 @@
-ptask
-=====
-ptask is a coroutine for php extension
+this project is based on https://github.com/liexusong/ptask
+
+the origin project(liexusong/ptask) is amazing, but there is some bugs.
+especially it does not deal with zend vm global variables, this is the key point. 
+
 
 How to install?
 ---------------
 ```
-$ git clone https://github.com/liexusong/ptask
+$ git clone https://github.com/in-han/php-libtask
 $ cd ptask/libtask
 $ make
 $ sudo make install
@@ -36,5 +38,8 @@ ptask_create("handler", "handler1");
 ptask_create("handler", "handler2");
 
 ptask_run();
+
+
+
 
 ```
