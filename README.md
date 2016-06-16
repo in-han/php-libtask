@@ -1,11 +1,11 @@
 Introduction
 ---------------
 ```
-this project is based on https://github.com/liexusong/ptask
+This project is based on https://github.com/liexusong/ptask.
 
-the origin project(liexusong/ptask) is amazing, but there is some bugs.
+The origin project(liexusong/ptask) is amazing, but there is some bugs.
 
-especially it doesn't deal with zend vm global variables, this is a key problem. 
+Especially it doesn't deal with zend vm global variables, and this is a key problem. 
 ```
 
 
