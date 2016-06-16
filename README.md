@@ -42,9 +42,11 @@ ptask_create("handler", "handler1");
 ptask_create("handler", "handler2");
 
 ptask_run();
+```
 
 
 Other examples?
 -----------
 ```
 examples/example_net_http.php
+```
