@@ -171,14 +171,14 @@ struct Task
 	void	*startarg;
 	void	*udata;
 
-    void    *zend_argument_stack;
-
+    void * zend_argument_stack;
     void * EG_current_execute_data;
     void * EG_scope;
     void * EG_called_scope;
     void * EG_active_op_array;
     void * EG_start_op;
     void * EG_return_value_ptr_ptr;
+	void * EG_active_symbol_table;
 };
 
 

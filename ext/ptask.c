@@ -128,6 +128,7 @@ PHP_MINIT_FUNCTION(ptask)
     EG_active_op_array_addr = (void **)& EG(active_op_array);
     EG_start_op_addr = (void **)& EG(start_op);
 	EG_return_value_ptr_ptr_addr = (void **)& EG(return_value_ptr_ptr);
+	EG_active_symbol_table_addr = (void**) & EG(active_symbol_table);
 	/*
 	*/
 	
@@ -262,7 +263,6 @@ PHP_FUNCTION(ptask_create)
     {
         RETURN_FALSE;
     }
-	printf("ptask_create get fname is:%s, !!!!!!!!!\n", fname);
 
     /* create task context */
     ctx = emalloc(sizeof(struct ptask_ctx));
@@ -284,9 +284,17 @@ PHP_FUNCTION(ptask_create)
 	zend_vm_stack_push((void *) NULL TSRMLS_CC);
 	zend_argument_stack_new = *zend_argument_stack_addr;
 	*zend_argument_stack_addr = saved_vm_stack;
-    taskcreate(ptask_thread_fn, (void *)ctx, PTASK_STACK_SIZE);
-	zend_argument_stack_new = NULL;
 
+	// alloc new  active symbol hashtable 
+	/*
+	HashTable * tmp = emalloc( sizeof(HashTable) );
+	zend_hash_init( tmp, 10, NULL, ZVAL_PTR_DTOR, 0);		
+	EG_active_symbol_table_new = tmp; 
+	EG_active_symbol_table_addr = (void**) & EG(active_symbol_table);
+	*/
+    
+	taskcreate(ptask_thread_fn, (void *)ctx, PTASK_STACK_SIZE);
+	zend_argument_stack_new = NULL;
 
     RETURN_TRUE;
 }

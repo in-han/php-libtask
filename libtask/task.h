@@ -185,6 +185,7 @@ extern void ** EG_called_scope_addr;
 extern void ** EG_active_op_array_addr;
 extern void ** EG_start_op_addr;
 extern void ** EG_return_value_ptr_ptr_addr;
+extern void ** EG_active_symbol_table_addr;
 
 /*
 extern int zend_argument_stack_top_offset;

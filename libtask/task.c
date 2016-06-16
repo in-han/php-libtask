@@ -9,14 +9,16 @@ int	taskcount;
 int	tasknswitch;
 int	taskexitval;
 Task	*taskrunning;
+Task	main_task;      //fdtask or scheduler share this 
+Task	*main_task_ptr= & main_task;      
 
 Context	taskschedcontext;
 Tasklist	taskrunqueue;
 
 void ** zend_argument_stack_addr;
 void * zend_argument_stack_new;
-void * zend_argument_stack_main;
 
+void ** EG_active_symbol_table_addr;
 void ** EG_current_execute_data_addr;
 void ** EG_scope_addr;
 void ** EG_called_scope_addr;
@@ -156,6 +158,7 @@ taskcreate(void (*fn)(void*), void *arg, uint stack)
 	taskcount++;
 	id = t->id;
     t->zend_argument_stack = zend_argument_stack_new; 
+    t->EG_active_symbol_table = NULL;
 
     t->EG_current_execute_data = NULL;
     t->EG_scope = NULL;
@@ -191,18 +194,22 @@ void
 taskswitch(void)
 {
 	needstack(0);
+    
     // save vm stack to taskrunning
     // not fdtask, not scheduler
     if( taskrunning->zend_argument_stack != NULL ){
+        /* save */
         taskrunning->zend_argument_stack = * zend_argument_stack_addr;   
-        * zend_argument_stack_addr = zend_argument_stack_main;
-        
         taskrunning->EG_current_execute_data = *EG_current_execute_data_addr;
+        taskrunning->EG_active_symbol_table = *EG_active_symbol_table_addr;
         taskrunning->EG_scope = *EG_scope_addr;
         taskrunning->EG_called_scope = *EG_called_scope_addr;
         taskrunning->EG_active_op_array = *EG_active_op_array_addr;
         taskrunning->EG_start_op = *EG_start_op_addr;
         taskrunning->EG_return_value_ptr_ptr = *EG_return_value_ptr_ptr_addr;
+
+        /*switch main, no need ?*/
+
     }
 	contextswitch(&taskrunning->context, &taskschedcontext);
 
@@ -286,16 +293,27 @@ taskscheduler(void)
         // restore zend vm stack page
         // not fdtask 
         if( taskrunning->zend_argument_stack != NULL ){
-            * zend_argument_stack_addr = taskrunning->zend_argument_stack;
-        
-            * EG_current_execute_data_addr = taskrunning->EG_current_execute_data;
-            * EG_scope_addr = taskrunning->EG_scope;
-            * EG_called_scope_addr = taskrunning->EG_called_scope;
-            * EG_active_op_array_addr = taskrunning->EG_active_op_array;
-            * EG_start_op_addr = taskrunning->EG_start_op;
-            * EG_return_value_ptr_ptr_addr =  taskrunning->EG_return_value_ptr_ptr;
+            /* save, no need ? */
+            /*1*/main_task_ptr->zend_argument_stack = *zend_argument_stack_addr;
+            /*1*/main_task_ptr->EG_current_execute_data = *EG_current_execute_data_addr;
+            /*3*/main_task_ptr->EG_active_symbol_table = * EG_active_symbol_table_addr;
+            /*4*/main_task_ptr->EG_scope = * EG_scope_addr;
+            /*5*/main_task_ptr->EG_called_scope = * EG_called_scope_addr;
+            /*6*/main_task_ptr->EG_active_op_array = * EG_active_op_array_addr;
+            /*7*/main_task_ptr->EG_start_op = * EG_start_op_addr;
+            /*8*/main_task_ptr->EG_return_value_ptr_ptr = * EG_return_value_ptr_ptr_addr;
+
+            /* switch */
+            /*1*/* zend_argument_stack_addr = taskrunning->zend_argument_stack;
+            /*2*/* EG_current_execute_data_addr = taskrunning->EG_current_execute_data;
+            /*3*/* EG_active_symbol_table_addr = taskrunning->EG_active_symbol_table;
+            /*4*/* EG_scope_addr = taskrunning->EG_scope;
+            /*5*/* EG_called_scope_addr = taskrunning->EG_called_scope;
+            /*6*/* EG_active_op_array_addr = taskrunning->EG_active_op_array;
+            /*7*/* EG_start_op_addr = taskrunning->EG_start_op;
+            /*8*/* EG_return_value_ptr_ptr_addr =  taskrunning->EG_return_value_ptr_ptr;
         }
-        zend_argument_stack_main = * zend_argument_stack_addr;
+        // zend_argument_stack_main = * zend_argument_stack_addr;
         
         //printf("taskscheduler, have set running, run contextswitch\n");
         //  taskinfo( 0 );
