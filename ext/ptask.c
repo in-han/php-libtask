@@ -218,22 +218,14 @@ void * saved_vm_stack;
 /*{{ ptask_create_begin()*/
 PHP_FUNCTION(ptask_create_begin)
 {
-	zend_argument_stack_addr = (void **) & EG( argument_stack );
-   	saved_vm_stack = *zend_argument_stack_addr;
-
-	EG(argument_stack) = zend_vm_stack_new_page( 1024 );
-	EG(argument_stack)->prev = NULL;
-	zend_vm_stack_push((void *) NULL TSRMLS_CC);
-
-	zend_argument_stack_new = *zend_argument_stack_addr;
-	*zend_argument_stack_addr = saved_vm_stack;
+    /*
+    */
 }
 /*}} */
 
 /*{{ ptask_create_end()*/
 PHP_FUNCTION(ptask_create_end)
 {
-	zend_argument_stack_new = NULL;
 }
 /*}} */
 
@@ -284,7 +276,17 @@ PHP_FUNCTION(ptask_create)
 
     Z_ADDREF_PP(&arg); /* arg->refcount++ */
 
+    // create new argument_stack
+    zend_argument_stack_addr = (void **) & EG( argument_stack );
+   	saved_vm_stack = *zend_argument_stack_addr;
+	EG(argument_stack) = zend_vm_stack_new_page( 1024 );
+	EG(argument_stack)->prev = NULL;
+	zend_vm_stack_push((void *) NULL TSRMLS_CC);
+	zend_argument_stack_new = *zend_argument_stack_addr;
+	*zend_argument_stack_addr = saved_vm_stack;
     taskcreate(ptask_thread_fn, (void *)ctx, PTASK_STACK_SIZE);
+	zend_argument_stack_new = NULL;
+
 
     RETURN_TRUE;
 }

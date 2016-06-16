@@ -33,9 +33,7 @@ function listen($arg)
         $conn = ptask_net_accept( $socket );
 
         // alloc new stack for new task
-        ptask_create_begin();
         ptask_create( "connection", array( 'fd'=> $conn ) );
-        ptask_create_end();
 
         continue;
     }
@@ -65,9 +63,7 @@ function connection($arg){
 }
 
 
-ptask_create_begin();
 ptask_create("listen", "handler1");
-ptask_create_end();
 
 ptask_run();
 
