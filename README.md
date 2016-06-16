@@ -1,7 +1,11 @@
+Introduction
+---------------
+```
 this project is based on https://github.com/liexusong/ptask
 
 the origin project(liexusong/ptask) is amazing, but there is some bugs.
-especially it does not deal with zend vm global variables, this is the key point. 
+
+especially it doesn't deal with zend vm global variables, this is a key problem. 
 
 
 How to install?
@@ -40,6 +44,7 @@ ptask_create("handler", "handler2");
 ptask_run();
 
 
-
-
+Other examples?
+-----------
 ```
+examples/example_net_http.php
