@@ -398,6 +398,10 @@ PHP_FUNCTION(ptask_net_recv)
 
     nbytes = fdread(sock2, buf, size);
 
+	if( nbytes <= 0 ){
+		RETURN_LONG( nbytes );
+	}
+
     buf[nbytes] = '\0';
 
     RETURN_STRINGL(buf, nbytes, 0);

@@ -44,7 +44,7 @@ netannounce(int istcp, char *server, int port)
 	}
 
 	if(proto == SOCK_STREAM)
-		listen(fd, 16);
+		listen(fd, 20);
 
 	fdnoblock(fd);
 	taskstate("netannounce succeeded");

@@ -83,7 +83,7 @@ taskstart(uint y, uint x)
 
 //print("taskstart %p\n", t);
 	t->startfn(t->startarg);
-    print("taskexits %p\n", t);
+    //print("taskexits %p\n", t);
 	taskexit(0);
     print("not reacehd\n");
 }
@@ -157,16 +157,22 @@ taskcreate(void (*fn)(void*), void *arg, uint stack)
 	t = taskalloc(fn, arg, stack);
 	taskcount++;
 	id = t->id;
-    t->zend_argument_stack = zend_argument_stack_new; 
-    t->EG_active_symbol_table = NULL;
+    
+    //notmal 
+    if( zend_argument_stack_new ){
+        t->zend_argument_stack = zend_argument_stack_new; 
+    //fdtask
+    }else{
+        t->zend_argument_stack = * zend_argument_stack_addr; 
+    }
 
+    t->EG_active_symbol_table = NULL;
     t->EG_current_execute_data = NULL;
     t->EG_scope = NULL;
     t->EG_called_scope = NULL;
     t->EG_active_op_array = NULL;
     t->EG_start_op = NULL;
     t->EG_return_value_ptr_ptr = NULL;
-    //t->zend_argument_stack = * zend_argument_stack_addr; 
 
 	if(nalltask%64 == 0){
 		alltask = realloc(alltask, (nalltask+64)*sizeof(alltask[0]));
@@ -197,7 +203,8 @@ taskswitch(void)
     
     // save vm stack to taskrunning
     // not fdtask, not scheduler
-    if( taskrunning->zend_argument_stack != NULL ){
+    //if( taskrunning->zend_argument_stack != NULL ){
+        // printf("taskswitch->switch running environment[save running, switch to sched]\n");
         /* save */
         taskrunning->zend_argument_stack = * zend_argument_stack_addr;   
         taskrunning->EG_current_execute_data = *EG_current_execute_data_addr;
@@ -208,9 +215,20 @@ taskswitch(void)
         taskrunning->EG_start_op = *EG_start_op_addr;
         taskrunning->EG_return_value_ptr_ptr = *EG_return_value_ptr_ptr_addr;
 
+
+        /*1*/* zend_argument_stack_addr = main_task_ptr->zend_argument_stack;
+        /*2*/* EG_current_execute_data_addr = main_task_ptr->EG_current_execute_data;
+        /*3*/* EG_active_symbol_table_addr = main_task_ptr->EG_active_symbol_table;
+        /*4*/* EG_scope_addr = main_task_ptr->EG_scope;
+        /*5*/* EG_called_scope_addr = main_task_ptr->EG_called_scope;
+        /*6*/* EG_active_op_array_addr = main_task_ptr->EG_active_op_array;
+        /*7*/* EG_start_op_addr = main_task_ptr->EG_start_op;
+        /*8*/* EG_return_value_ptr_ptr_addr =  main_task_ptr->EG_return_value_ptr_ptr;
+
         /*switch main, no need ?*/
 
-    }
+    //}else{
+    //}
 	contextswitch(&taskrunning->context, &taskschedcontext);
 
     //zend_argument_stack_main = * zend_argument_stack_addr;
@@ -220,6 +238,10 @@ taskswitch(void)
 void
 taskready(Task *t)
 {
+    // for a fdwait task, if task is exit directly, the fd will activate the task anyway.
+	if( t->exiting == 1 ){
+        return;
+    }
 	t->ready = 1;
 	addtask(&taskrunqueue, t);
 }
@@ -290,9 +312,11 @@ taskscheduler(void)
 		taskrunning = t;
 		tasknswitch++;
 		taskdebug("run %d (%s)", t->id, t->name);
+
+        //printf("taskswitch->switch running environment[save sched, switch to task]\n");
         // restore zend vm stack page
         // not fdtask 
-        if( taskrunning->zend_argument_stack != NULL ){
+        //if( taskrunning->zend_argument_stack != NULL ){
             /* save, no need ? */
             /*1*/main_task_ptr->zend_argument_stack = *zend_argument_stack_addr;
             /*1*/main_task_ptr->EG_current_execute_data = *EG_current_execute_data_addr;
@@ -312,11 +336,11 @@ taskscheduler(void)
             /*6*/* EG_active_op_array_addr = taskrunning->EG_active_op_array;
             /*7*/* EG_start_op_addr = taskrunning->EG_start_op;
             /*8*/* EG_return_value_ptr_ptr_addr =  taskrunning->EG_return_value_ptr_ptr;
-        }
+        //}
         // zend_argument_stack_main = * zend_argument_stack_addr;
         
         //printf("taskscheduler, have set running, run contextswitch\n");
-        //  taskinfo( 0 );
+       // taskinfo( 0 );
 		contextswitch(&taskschedcontext, &t->context);
 
         //* zend_argument_stack_addr = zend_argument_stack_main;

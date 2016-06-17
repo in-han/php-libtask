@@ -150,6 +150,10 @@ struct Context
 	ucontext_t	uc;
 };
 
+struct pollfdext{
+	uvlong expire_time;
+};
+
 struct Task
 {
 	char	name[256];	// offset known to acid
@@ -167,6 +171,9 @@ struct Task
 	int	alltaskslot;
 	int	system;
 	int	ready;
+    
+    int fdwait_ret;
+
 	void	(*startfn)(void*);
 	void	*startarg;
 	void	*udata;

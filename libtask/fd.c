@@ -8,7 +8,9 @@ enum
 };
 
 static struct pollfd pollfd[MAXFD];
+static struct pollfdext pollfdext[MAXFD];
 static Task *polltask[MAXFD];
+
 static int npollfd;
 static int startedfdtask;
 static Tasklist sleeping;
@@ -19,21 +21,26 @@ void
 fdtask(void *v)
 {
 	int i, ms;
+    int timeout = 0;
+    int have_active_fd = 1;
 	Task *t;
 	uvlong now;
 	
 	tasksystem();
 	taskname("fdtask");
+
 	for(;;){
 		/* let everyone else run */
-		while(taskyield() > 0)
+		while( taskyield() > 0)
 			;
+        have_active_fd = 0;
 		/* we're the only one runnable - poll for i/o */
 		errno = 0;
 		taskstate("poll");
-		if((t=sleeping.head) == nil)
-			ms = -1;
-		else{
+		if((t=sleeping.head) == nil){
+			//ms = -1;
+		    ms = 3000;
+        }else{
 			/* sleep at most 5s */
 			now = nsec();
 			if(now >= t->alarmtime)
@@ -50,12 +57,32 @@ fdtask(void *v)
 			taskexitall(0);
 		}
 
-		/* wake up the guys who deserve it */
+		/* wake up the guys who deserve it, timeout */
+		now = nsec();
 		for(i=0; i<npollfd; i++){
-			while(i < npollfd && pollfd[i].revents){
+            break;
+			while(i < npollfd && (timeout=(pollfdext[i].expire_time > 0 &&  now > pollfdext[i].expire_time)) ){
+                //printf("fd is active, by timeout: fd[%d]\n", pollfd[i].fd);
+
+                polltask[i]->fdwait_ret = -2;
 				taskready(polltask[i]);
+
 				--npollfd;
 				pollfd[i] = pollfd[npollfd];
+				pollfdext[i] = pollfdext[npollfd];
+				polltask[i] = polltask[npollfd];
+            }
+        }
+
+		/* wake up the guys who deserve it, event */
+		for(i=0; i<npollfd; i++){
+			while(i < npollfd && pollfd[i].revents ){ 
+                //printf("fd is active, by read event: fd[%d]\n", pollfd[i].fd);
+				
+                taskready(polltask[i]);
+				--npollfd;
+				pollfd[i] = pollfd[npollfd];
+				pollfdext[i] = pollfdext[npollfd];
 				polltask[i] = polltask[npollfd];
 			}
 		}
@@ -112,7 +139,7 @@ taskdelay(uint ms)
 	return (nsec() - now)/1000000;
 }
 
-void
+int
 fdwait(int fd, int rw)
 {
 	int bits;
@@ -138,12 +165,16 @@ fdwait(int fd, int rw)
 		break;
 	}
 
+    taskrunning->fdwait_ret = 0;                // if read/write timeout, fdwait can return 
 	polltask[npollfd] = taskrunning;
 	pollfd[npollfd].fd = fd;
+//	pollfdext[npollfd].expire_time = nsec() + 3*1000*1000*1000LL;
+	pollfdext[npollfd].expire_time = 0;
 	pollfd[npollfd].events = bits;
 	pollfd[npollfd].revents = 0;
 	npollfd++;
 	taskswitch();
+    return taskrunning->fdwait_ret;
 }
 
 /* Like fdread but always calls fdwait before reading. */
@@ -162,9 +193,14 @@ int
 fdread(int fd, void *buf, int n)
 {
 	int m;
+    int fdwait_ret;
 	
-	while((m=read(fd, buf, n)) < 0 && errno == EAGAIN)
-		fdwait(fd, 'r');
+	while((m=read(fd, buf, n)) < 0 && errno == EAGAIN){
+		fdwait_ret = fdwait(fd, 'r');
+        if( fdwait_ret == -2 ){
+                return fdwait_ret;
+        }
+    }
 	return m;
 }
 
