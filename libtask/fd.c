@@ -60,9 +60,8 @@ fdtask(void *v)
         /* wake up the guys who deserve it, timeout */
         now = nsec();
         for(i=0; i<npollfd; i++){
-            break;
             while(i < npollfd && (timeout=(pollfdext[i].expire_time > 0 &&  now > pollfdext[i].expire_time)) ){
-                //printf("fd is active, by timeout: fd[%d]\n", pollfd[i].fd);
+                printf("fd is active, by timeout: fd[%d]\n", pollfd[i].fd);
 
                 polltask[i]->fdwait_ret = -2;
                 taskready(polltask[i]);
@@ -168,8 +167,8 @@ fdwait(int fd, int rw)
     taskrunning->fdwait_ret = 0;                // if read/write timeout, fdwait can return 
     polltask[npollfd] = taskrunning;
     pollfd[npollfd].fd = fd;
-//  pollfdext[npollfd].expire_time = nsec() + 3*1000*1000*1000LL;
-    pollfdext[npollfd].expire_time = 0;
+    pollfdext[npollfd].expire_time = nsec() + 3*1000*1000*1000LL;
+//  pollfdext[npollfd].expire_time = 0;
     pollfd[npollfd].events = bits;
     pollfd[npollfd].revents = 0;
     npollfd++;
